@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/popup.css">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div id="app">
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <span class="logo-text">DeepWork OS</span>
+            </div>
+            <span id="connection-status" class="status-dot disconnected" title="Disconnected"></span>
+        </div>
+
+        <div id="loading-state" class="state-container">
+            <div class="spinner"></div>
+            <p>Initializing protocol...</p>
+        </div>
+
+        <div id="session-info" class="state-container" style="display:none;">
+            <div class="active-badge">Protocol Enforcing</div>
+            <h2 id="task-name" class="task-title"></h2>
+
+            <div class="timer-container">
+                <span id="elapsed-time" class="timer-text">00:00:00</span>
+                <span class="timer-label">Tracking Active</span>
+            </div>
+
+            <button id="end-session" class="dwos-btn-destructive">Terminate Focus Protocol</button>
+        </div>
+
+        <div id="no-session" class="state-container" style="display:none;">
+            <div class="idle-icon"></div>
+            <h3 class="idle-title">Protocol Idle</h3>
+            <p class="idle-text">Enter the zone. Declare your parameters below to engage focus enforcement.</p>
+
+            <form id="start-session-form" class="dwos-form">
+                <div class="form-group">
+                    <label>Main Objective</label>
+                    <input type="text" id="input-task" placeholder="e.g. Implement Auth" required autocomplete="off" />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Minutes</label>
+                        <input type="number" id="input-minutes" value="25" min="15" max="480" required />
+                    </div>
+
+                    <div class="form-group" style="flex: 2;">
+                        <label>Project</label>
+                        <select id="input-project">
+                            <option value="none">No Project</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Allowed Domains (comma separated)</label>
+                    <input type="text" id="input-urls" value="github.com, stackoverflow.com" required
+                        autocomplete="off" />
+                </div>
+
+                <button type="submit" id="start-session-btn" class="dwos-btn-primary">
+                    Initiate Protocol
+                </button>
+            </form>
+
+            <button id="open-dashboard" class="dwos-btn-ghost mt-2">Open Dashboard</button>
+        </div>
+
+        <div id="locked-state" class="state-container" style="display:none;">
+            <div class="locked-icon"></div>
+            <h3 class="idle-title">Access Restricted</h3>
+            <p class="idle-text" style="color:red">Authentication token missing. Please log in through the main
+                dashboard.</p>
+            <button id="open-login-dashboard" class="dwos-btn-primary mt-4">Open Login Page</button>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+
+</html>
