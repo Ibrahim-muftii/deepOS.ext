@@ -3,9 +3,14 @@
  *
  * Responsibilities:
  *  - Self-check on inject and show block overlay if out-of-scope (document_start fallback)
- *  - Track mouse clicks and key presses on in-scope tabs, flush to background on override/memo
- *  - Listen for RE_EVALUATE, MEMO_WARN, MEMO_PROMPT messages from background
+ *  - Track mouse clicks and key presses on in-scope tabs, flush on override/memo
+ *  - Listen for UNBLOCK_PAGE, MEMO_WARN, MEMO_PROMPT messages from background
  *  - Show memo warning toast and memo prompt overlay
+ *
+ * Events sent to background (which forwards to backend):
+ *  - OVERRIDE — user overrides a blocked site (with reason)
+ *  - MEMO     — periodic check-in submitted by user
+ *  NO other events are sent from content script.
  */
 
 // ─── State ─────────────────────────────────────────────────────────────────
@@ -88,8 +93,6 @@ function startTracking() {
 // ─── Message listener from background ────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg) => {
 	if (msg.type === "RE_EVALUATE") {
-		// Evaluates every time the user clicks on this tab (onActivated)
-		// or changes the URL entirely (SPA navigation like Twitter/YouTube)
 		checkBlockState();
 	}
 
@@ -152,7 +155,7 @@ function showBlockOverlay(session) {
 			return;
 		}
 
-		// Tell background to save override + update bypass list
+		// Send OVERRIDE event to background — the ONLY override event we fire
 		chrome.runtime
 			.sendMessage({
 				type: "OVERRIDE",
@@ -214,7 +217,7 @@ function showMemoPrompt(session) {
 			<h1 style="font-size:24px;font-weight:700;color:#18181b;margin:0 0 8px;">What are you working on?</h1>
 			<p style="font-size:14px;color:#71717a;margin:0 0 28px;">Session: <strong style="color:#18181b;">${session.taskName}</strong></p>
 			<textarea id="dwos-memo-input" placeholder="Describe what you're working on right now..." maxlength="200" style="width:100%;padding:12px 14px;border:1.5px solid #e4e4e7;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;resize:none;height:90px;margin-bottom:14px;font-family:inherit;"></textarea>
-			<button id="dwos-memo-save" style="display:block;width:100%;padding:13px;background:#18181b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">Save &amp; Continue</button>
+			<button id="dwos-memo-save" style="display:block;width:100%;padding:13px;background:#18181b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">Save & Continue</button>
 		</div>
 	`;
 
@@ -230,7 +233,7 @@ function showMemoPrompt(session) {
 			return;
 		}
 
-		// Flush current interaction counts along with the memo
+		// Send MEMO event to background — the ONLY memo event we fire
 		chrome.runtime
 			.sendMessage({
 				type: "MEMO",

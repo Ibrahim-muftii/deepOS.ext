@@ -35,18 +35,34 @@ function showState(stateEl) {
 }
 
 function updateTimer() {
-	if (!currentSession) return;
-	const startedAt = new Date(currentSession.startedAt || Date.now()).getTime();
-	const now = Date.now();
-	const diff = Math.max(0, now - startedAt);
+	if (!currentSession) {
+		if (timerInterval) clearInterval(timerInterval);
+		return;
+	}
 
+	const startedAt = new Date(currentSession.startedAt).getTime();
+	const now = Date.now();
+	const diffTotal = Math.max(0, now - startedAt);
+
+	const declaredMinutes = currentSession.declaredMinutes || 25;
+	const declaredMs = declaredMinutes * 60000;
+
+	// Check if we've passed the limit
+	if (diffTotal >= declaredMs) {
+		elapsedTimeEl.innerText = "Protocol Complete";
+		elapsedTimeEl.style.color = "#10b981"; // Success color
+		if (timerInterval) clearInterval(timerInterval);
+		return;
+	}
+
+	const diff = Math.max(0, now - startedAt);
 	const hours = Math.floor(diff / 3600000);
 	const mins = Math.floor((diff % 3600000) / 60000);
 	const secs = Math.floor((diff % 60000) / 1000);
 
 	const display = [String(hours).padStart(2, "0"), String(mins).padStart(2, "0"), String(secs).padStart(2, "0")].join(":");
-
 	elapsedTimeEl.innerText = display;
+	elapsedTimeEl.style.color = ""; // Reset
 }
 
 async function fetchProjects() {
@@ -59,7 +75,6 @@ async function fetchProjects() {
 			const json = await res.json();
 			const projects = json.data || [];
 
-			// Clear existing options except the first one (none)
 			while (inputProject.options.length > 1) {
 				inputProject.remove(1);
 			}
@@ -80,6 +95,8 @@ function initializeApp() {
 	chrome.storage.local.get(["dwos_session", "dwos_token"], async (res) => {
 		currentToken = res.dwos_token;
 		currentSession = res.dwos_session;
+
+		console.log("[DWOS POPUP] Initializing state:", { hasToken: !!currentToken, hasSession: !!currentSession });
 
 		if (!currentToken) {
 			connectionStatus.className = "status-dot disconnected";
@@ -103,7 +120,6 @@ function initializeApp() {
 	});
 }
 
-// Event Listeners
 document.addEventListener("DOMContentLoaded", () => {
 	initializeApp();
 });
@@ -149,10 +165,7 @@ startSessionForm.addEventListener("submit", async (e) => {
 
 		const json = await res.json();
 		if (res.ok) {
-			// Backend WebSocket will broadcast SESSION_SYNC to background.js
-			// which updates chrome.storage.local, triggering initializeApp().
-			// But we can also set it immediately to be snappy.
-			chrome.storage.local.set({ dwos_session: json.data });
+			console.log("[DWOS POPUP] Session start successful:", json.data.id);
 		} else {
 			alert("Failed to start session: " + (json.message || json.error || "Unknown error"));
 		}
